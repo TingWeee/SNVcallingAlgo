@@ -56,7 +56,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_
 #eval_set = [(X_train, y_train), (X_val, y_val)]
 print('started setting up')
 
-def report_perf(optimizer, X, y, title="model", callbacks=None):
+def report_performance(optimizer, X, y, title="model", callbacks=None):
     
     start = time()
     print('running_report')
@@ -67,7 +67,6 @@ def report_perf(optimizer, X, y, title="model", callbacks=None):
         optimizer.fit(X, y)
         
     d = pd.DataFrame(optimizer.cv_results_)
-    
     
     best_score = optimizer.best_score_
     best_score_std = d.iloc[optimizer.best_index_].std_test_score
@@ -93,23 +92,17 @@ from skopt.space import Real
 search_spaces = {'learning_rate': Real(low = 0.01, high = 10, prior ='log-uniform'),# 10??
                  'n_estimators': Integer(10, 5000),
                  'max_depth': Integer(2, 20), #'min-child-weight': Integer(1, 5),
-                 #'colsample_bytree': Real(0.1, 1.0, 'uniform'), # subsample ratio of columns by tree, for samples with lots of features
+                 'colsample_bytree': Real(0.1, 1.0, 'uniform'), # subsample ratio of columns by tree, for samples with lots of features
                  'gamma': Real(1e-9, 100., 'log-uniform'), # Minimum loss reduction required to make a further partition on a leaf node of the tree. The larger gamma is, the more conservative the algorithm will be
                  'reg_alpha': Real(1e-9, 100., 'log-uniform'), # L1 regularization
                  'reg_lambda': Real(1e-9, 100, 'log-uniform')
    }
-# Setting the validation strategy
-skf = StratifiedKFold(n_splits=7,
-                      shuffle=True, 
-                      random_state=42)
-
-cv_strategy = list(skf.split(X_train, y_train))
 
 baye_opt = BayesSearchCV(
     estimator = clf,
     search_spaces = search_spaces,
     scoring = 'f1',
-    cv = StratifiedKFold(n_splits = 7, shuffle = True),
+    cv = StratifiedKFold(n_splits = 7, shuffle = True), # validation strategy
     n_iter=100,                                       # max number of trials
     n_points=5,                                       # number of hyperparameter sets evaluated at the same time
     n_jobs=-1,  # idk                                       # number of jobs
@@ -124,7 +117,7 @@ baye_opt = BayesSearchCV(
 overdone_control = DeltaYStopper(delta=0.0001)                    # We stop if the gain of the optimization becomes too small
 time_limit_control = DeadlineStopper(total_time=60*60*6)          # We impose a time limit (1 hours)
 print('start')
-optimi = report_perf(baye_opt, X_train, y_train,'XGBoost_classifier', 
+optimi = report_performance(baye_opt, X_train, y_train,'XGBoost_classifier', 
                           callbacks=[overdone_control, time_limit_control])
 print('end')
 from skopt import dump, load
