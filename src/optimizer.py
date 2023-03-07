@@ -37,7 +37,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from numpy import nan
 
-
+# Prepare input dataset
 df = pd.read_csv("combined_dataset.csv")
 df = df.iloc[: , 1:]
 print('finish reading dataset')
@@ -50,11 +50,8 @@ df[['STATUS_vd']] = enc.fit_transform(df[['STATUS_vd']])
 X = df[df.columns[~df.columns.isin(['truth','POS','CHROM'])]]
 y = df['truth'] 
 
-#split into test, train, and validation
+# Split into test, train
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state = random_states)
-#X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size = 0.2, random_state = random_states)
-#eval_set = [(X_train, y_train), (X_val, y_val)]
-print('started setting up')
 
 def report_performance(optimizer, X, y, title="model", callbacks=None):
     
@@ -89,7 +86,7 @@ clf = XGBClassifier(n_jobs = -1,
                     tree_method='approx', verbosity = 1)
 
 from skopt.space import Real
-search_spaces = {'learning_rate': Real(low = 0.01, high = 10, prior ='log-uniform'),# 10??
+search_spaces = {'learning_rate': Real(low = 0.01, high = 10, prior ='log-uniform'),
                  'n_estimators': Integer(10, 5000),
                  'max_depth': Integer(2, 20), #'min-child-weight': Integer(1, 5),
                  'colsample_bytree': Real(0.1, 1.0, 'uniform'), # subsample ratio of columns by tree, for samples with lots of features
@@ -105,23 +102,21 @@ baye_opt = BayesSearchCV(
     cv = StratifiedKFold(n_splits = 7, shuffle = True), # validation strategy
     n_iter=100,                                       # max number of trials
     n_points=5,                                       # number of hyperparameter sets evaluated at the same time
-    n_jobs=-1,  # idk                                       # number of jobs
-    #iid=False,                                        # if not iid it optimizes on the cv score
+    n_jobs=-1,                                        # number of jobs
     #return_train_score=False,refit = False
     refit = False, verbose = 1,
     # optimizer_kwargs={'base_estimator': 'GP'}, # optmizer parameters: we use Gaussian Process (GP)
-    # fit_params = fit_params, 
     random_state=42)
 
 
-overdone_control = DeltaYStopper(delta=0.0001)                    # We stop if the gain of the optimization becomes too small
-time_limit_control = DeadlineStopper(total_time=60*60*6)          # We impose a time limit (1 hours)
-print('start')
+overdone_control = DeltaYStopper(delta=0.0001)                    # stop if the gain of the optimization becomes too small
+time_limit_control = DeadlineStopper(total_time=60*60*6)          # impose a time limit
+
 optimi = report_performance(baye_opt, X_train, y_train,'XGBoost_classifier', 
                           callbacks=[overdone_control, time_limit_control])
-print('end')
+
 from skopt import dump, load
-dump(optimi, 'optimise3.pkl')
+dump(optimi, 'optimise.pkl')
 
 best_params = optimi.best_params_
 
