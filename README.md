@@ -18,4 +18,4 @@ xgb_clf.fit(X_train, y_train)
 ```
 
 ## Feature Selection and Dataset Testing
-Code for feature selection and combinatorial dataset testing ca be found in Features_selection.ipynb and Dataset_testing.ipynb respectively
+Code for feature selection and combinatorial dataset testing can be found in Features_selection.ipynb and Dataset_testing.ipynb respectively
